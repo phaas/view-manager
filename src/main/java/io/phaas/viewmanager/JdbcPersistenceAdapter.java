@@ -33,9 +33,9 @@ public class JdbcPersistenceAdapter<E> implements PersistenceAdapter<E> {
 		this.versionColumn = versionColumn;
 		this.otherColumns = otherColumns;
 		this.jdbc = new JdbcTemplate(dataSource);
-		jdbcInsert = buildInsertStatement(tableName, idColumn, otherColumns);
-		jdbcSelect = buildSelectStatement(tableName, idColumn, otherColumns);
-		jdbcUpdate = buildUpdateStatement(tableName, idColumn, otherColumns);
+		jdbcInsert = buildInsertStatement(tableName, idColumn, versionColumn, otherColumns);
+		jdbcSelect = buildSelectStatement(tableName, idColumn, versionColumn, otherColumns);
+		jdbcUpdate = buildUpdateStatement(tableName, idColumn, versionColumn, otherColumns);
 	}
 
 	@Override
@@ -49,18 +49,24 @@ public class JdbcPersistenceAdapter<E> implements PersistenceAdapter<E> {
 	}
 
 	@Override
-	public void update(Object[] params) {
-		Object[] objectValues = params;
+	public void update(Object[] params, long version) {
+		final Object[] objectValues = params;
 		int rows = jdbc.update(jdbcUpdate, new PreparedStatementSetter() {
 			@Override
 			public void setValues(PreparedStatement ps) throws SQLException {
+				final boolean hasVersion = versionColumn != null;
+				int offset = 0;
+				int lastValue = objectValues.length - 1;
+
 				// Assign values 2..n to parameters 1..n-1
-				for (int i = 1; i < objectValues.length; i++) {
-					ps.setObject(i, objectValues[i]);
+				for (int parameterIndex = 1; parameterIndex <= lastValue; parameterIndex++) {
+					ps.setObject(parameterIndex, objectValues[parameterIndex - offset]);
 				}
-				// ID is the last parameter
-				ps.setObject(objectValues.length, objectValues[0]);
-				// TODO version
+				// ID and VERSION are the final parameter(s)
+				ps.setObject(lastValue + 1, objectValues[0]);
+				if (hasVersion) {
+					ps.setObject(lastValue + 2, version);
+				}
 			}
 		});
 		if (rows != 1) {
@@ -85,15 +91,20 @@ public class JdbcPersistenceAdapter<E> implements PersistenceAdapter<E> {
 		jdbc.execute("truncate table " + tableName);
 	}
 
-	protected String buildInsertStatement(String tableName, String idColumn, String[] otherColumns) {
+	protected String buildInsertStatement(String tableName, String idColumn, String versionColumn, String... otherColumns) {
 		return String.format("INSERT INTO %s (%s) values (%s)", tableName, //
-				columns(idColumn, otherColumns), params(1 + otherColumns.length));
+				columns(idColumn, versionColumn, otherColumns), params(versionColumn == null ? 1 : 2 + otherColumns.length));
 	}
 
-	protected String buildUpdateStatement(String tableName, String idColumn, String[] otherColumns) {
+	protected String buildUpdateStatement(String tableName, String idColumn, String versionColumn, String... otherColumns) {
 		StringBuilder sql = new StringBuilder("UPDATE ").append(tableName).append(" SET ");
 
 		boolean first = true;
+		if (versionColumn != null) {
+			sql.append(versionColumn).append("=?");
+			first = false;
+		}
+
 		for (String col : otherColumns) {
 			if (first) {
 				first = false;
@@ -103,17 +114,24 @@ public class JdbcPersistenceAdapter<E> implements PersistenceAdapter<E> {
 			sql.append(col).append("=?");
 		}
 		sql.append(" WHERE ").append(idColumn).append("=?");
-		// TODO "and version=?
+
+		if (versionColumn != null) {
+			sql.append(" AND ").append(versionColumn).append("=?");
+		}
 
 		return sql.toString();
 	}
 
-	protected String buildSelectStatement(String tableName, String idColumn, String[] otherColumns) {
-		return String.format("SELECT %s FROM %s WHERE %s = ?", columns(idColumn, otherColumns), tableName, idColumn);
+	protected String buildSelectStatement(String tableName, String idColumn, String versionColumn, String... otherColumns) {
+		return String.format("SELECT %s FROM %s WHERE %s = ?", columns(idColumn, versionColumn, otherColumns), tableName, idColumn);
 	}
 
-	protected static String columns(String idColumn, String[] otherColumns) {
+	protected static String columns(String idColumn, String versionColumn, String[] otherColumns) {
 		StringBuilder sb = new StringBuilder(idColumn);
+		if (versionColumn != null) {
+			sb.append(",").append(versionColumn);
+		}
+
 		for (String s : otherColumns) {
 			sb.append(",").append(s);
 		}

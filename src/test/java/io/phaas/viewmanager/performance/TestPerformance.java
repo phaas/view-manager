@@ -24,6 +24,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StopWatch;
 
+/**
+ * Compare JPA/Hibernate based view management with JDBC/ViewManager implementation.
+ * 
+ * @author Patrick Haas
+ *
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = { TestConfiguration.class })
 public class TestPerformance {
@@ -184,5 +190,4 @@ public class TestPerformance {
 	public void printSerializationStats() {
 		System.out.println("Serialization count: " + JpaViewEntity.serialization + "/" + ViewEntity.serialization);
 	}
-
 }

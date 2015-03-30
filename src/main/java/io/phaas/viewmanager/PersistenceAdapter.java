@@ -8,7 +8,7 @@ public interface PersistenceAdapter<E> {
 
 	void insert(Object[] params);
 
-	void update(Object[] params);
+	void update(Object[] params, long version);
 
 	void delete(Set<String> ids);
 

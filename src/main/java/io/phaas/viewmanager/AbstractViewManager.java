@@ -71,7 +71,7 @@ public abstract class AbstractViewManager<E extends ViewEntity<?>, I, P extends 
 			result = persistence.select(id.toString());
 
 			initializeObject(result);
-			session.addLoadedObject(result);
+			session.addLoadedObject(result, result.getVersion());
 			return result;
 		} catch (EmptyResultDataAccessException | ObjectDeletedException e) {
 			throw new EntityNotFoundException(e.getMessage());
@@ -139,7 +139,7 @@ public abstract class AbstractViewManager<E extends ViewEntity<?>, I, P extends 
 					// and no longer meets the predicate
 				} else {
 					result.add(initializeObject(item));
-					session.addLoadedObject(item);
+					session.addLoadedObject(item, item.getVersion());
 				}
 			} catch (ObjectDeletedException e) {
 				// Object in the database matched the predicate but the entity has since been
@@ -182,15 +182,13 @@ public abstract class AbstractViewManager<E extends ViewEntity<?>, I, P extends 
 		persistence.insert(getObjectValues(object));
 	}
 
-	protected void update(E object) {
-		persistence.update(getObjectValues(object));
+	protected void update(E object, long version) {
+		persistence.update(getObjectValues(object), version);
 	}
 
 	protected void delete(Set<String> ids) {
 		persistence.delete(ids);
 	}
-
-	protected abstract Object[] getObjectValues(E object);
 
 	protected ObjectMapper getObjectMapper() {
 		return objectMapper;
@@ -200,4 +198,9 @@ public abstract class AbstractViewManager<E extends ViewEntity<?>, I, P extends 
 		return persistence;
 	}
 
+	protected abstract Object[] getObjectValues(E entity);
+
+	protected abstract void incrementVersion(E entity);
+
+	protected abstract boolean isModified(E entity);
 }

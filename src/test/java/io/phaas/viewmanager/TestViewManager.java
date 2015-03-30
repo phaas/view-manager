@@ -17,8 +17,7 @@ public class TestViewManager extends AbstractViewManager<TestEntity, String, Tes
 				+ "FROM test.test_view_entity WHERE item_id = ?";
 
 		protected TestEntityJdbcAdapter(DataSource dataSource) {
-			super(dataSource, ROW_MAPPER, "TEST.TEST_VIEW_ENTITY", "ID", "VERSION", "VERSION", "SERIALIZED_DATA", "ITEM_ID", "KEY",
-					"OTHER_KEY");
+			super(dataSource, ROW_MAPPER, "TEST.TEST_VIEW_ENTITY", "ID", "VERSION", "SERIALIZED_DATA", "ITEM_ID", "KEY", "OTHER_KEY");
 		}
 
 		public List<TestEntity> findByGroupId(String groupId) {
@@ -52,6 +51,16 @@ public class TestViewManager extends AbstractViewManager<TestEntity, String, Tes
 	public List<TestEntity> findByGroupId(String groupId) {
 		List<TestEntity> dbResults = getPersistence().findByGroupId(groupId);
 		return mergeObjectsWithSession(dbResults, e -> groupId.equals(e.getGroupId()));
+	}
+
+	@Override
+	protected void incrementVersion(TestEntity entity) {
+		entity.setVersion(entity.getVersion() + 1);
+	}
+
+	@Override
+	protected boolean isModified(TestEntity entity) {
+		return true;
 	}
 
 }

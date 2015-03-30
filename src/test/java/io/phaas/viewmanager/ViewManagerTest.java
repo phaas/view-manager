@@ -10,6 +10,7 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 
 import io.phaas.viewmanager.configuration.TestConfiguration;
 import io.phaas.viewmanager.model.TestObject;
@@ -22,6 +23,7 @@ import javax.persistence.PersistenceContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -206,6 +208,46 @@ public class ViewManagerTest {
 			assertEquals("OTHER", id2.getOtherKey());
 			return null;
 		});
+	}
 
+	@Test
+	public void testConcurrentModification() {
+		tx.execute(t -> {
+			vm.persist(new TestEntity("ID1", new TestObject("GroupID", "RED", "Color")));
+			return null;
+		});
+
+		final CountDownLatch start = new CountDownLatch(1);
+		final CountDownLatch done = new CountDownLatch(1);
+		new Thread(() -> {
+			tx.execute(t -> {
+				try {
+					start.await();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				TestEntity entity = vm.require("ID1");
+				entity.write().count++;
+				return null;
+			});
+			done.countDown();
+		}).start();
+
+		try {
+			tx.execute(t -> {
+				TestEntity entity = vm.require("ID1");
+				start.countDown();
+				try {
+					done.await();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				entity.write().count++;
+				return null;
+			});
+			fail("Expected concurrent modification exception");
+		} catch (ObjectOptimisticLockingFailureException e) {
+			// success
+		}
 	}
 }
