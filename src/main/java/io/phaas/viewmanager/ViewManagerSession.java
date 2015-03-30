@@ -11,12 +11,12 @@ import java.util.stream.Stream;
 
 public class ViewManagerSession<E extends ViewEntity<?>> {
 
-	private final AbstractViewManager<E, ?> vm;
+	private final AbstractViewManager<E, ?, ?> vm;
 	private final Map<String, E> addedObjects = new TreeMap<>();
 	private final Map<String, E> loadedObjects = new TreeMap<>();
 	private final Set<String> removedObjects = new TreeSet<>();
 
-	public ViewManagerSession(AbstractViewManager<E, ?> vm) {
+	public ViewManagerSession(AbstractViewManager<E, ?, ?> vm) {
 		this.vm = vm;
 	}
 
