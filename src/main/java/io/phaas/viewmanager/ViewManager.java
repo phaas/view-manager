@@ -5,6 +5,11 @@ import javax.persistence.EntityNotFoundException;
 public interface ViewManager<E extends ViewEntity<?>, I> {
 
 	/**
+	 * Persist a new view.
+	 */
+	void persist(E entity);
+
+	/**
 	 * Find an existing view with this id, and throw an error if it doesn't exist.
 	 * 
 	 * @param id
@@ -22,14 +27,6 @@ public interface ViewManager<E extends ViewEntity<?>, I> {
 	E load(I id);
 
 	/**
-	 * Create a new entity with this id. The returned entity is attached to the entity manager.
-	 * 
-	 * @param id
-	 * @return
-	 */
-	E create(I id);
-
-	/**
 	 * Delete the view with this id.
 	 * 
 	 * @param id
@@ -41,5 +38,4 @@ public interface ViewManager<E extends ViewEntity<?>, I> {
 	 */
 	void deleteAll();
 
-	void persist(E entity);
 }

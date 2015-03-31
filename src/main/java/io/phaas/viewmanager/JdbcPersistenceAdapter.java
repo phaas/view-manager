@@ -10,11 +10,12 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 public class JdbcPersistenceAdapter<E> implements PersistenceAdapter<E> {
 
 	private final JdbcTemplate jdbc;
+
+	private final String tableName;
 	private final String idColumn;
 	private final String versionColumn;
 	private final String[] otherColumns;
@@ -22,7 +23,6 @@ public class JdbcPersistenceAdapter<E> implements PersistenceAdapter<E> {
 	private final String jdbcInsert;
 	private final String jdbcSelect;
 	private final String jdbcUpdate;
-	private final String tableName;
 	private final RowMapper<E> rowMapper;
 
 	public JdbcPersistenceAdapter(DataSource dataSource, RowMapper<E> rowMapper, String tableName, String idColumn, String versionColumn,
@@ -70,7 +70,8 @@ public class JdbcPersistenceAdapter<E> implements PersistenceAdapter<E> {
 			}
 		});
 		if (rows != 1) {
-			throw new ObjectOptimisticLockingFailureException("??", params[0]);
+			throw new OptimisticLockingFailureException("Expected update to affect 1 row but was actually " + rows //
+					+ " (id: " + params[0] + ")");
 		}
 	}
 

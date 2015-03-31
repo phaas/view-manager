@@ -80,14 +80,11 @@ public abstract class AbstractViewManager<E extends ViewEntity<?>, I, P extends 
 
 	@Override
 	public E load(I id) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public E create(I id) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return require(id);
+		} catch (EntityNotFoundException e) {
+			return null;
+		}
 	}
 
 	@Override

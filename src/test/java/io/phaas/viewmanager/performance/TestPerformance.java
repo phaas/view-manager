@@ -36,7 +36,7 @@ public class TestPerformance {
 
 	private static final int UPDATE_COUNT = 10;
 	private static final int ITEM_COUNT = 1000;
-	private static final int LOOPS = 10;
+	private static final int LOOPS = 5;
 
 	@PersistenceContext
 	private EntityManager em;
@@ -112,7 +112,7 @@ public class TestPerformance {
 	public void createAndUpdateObjectsInSingleTransaction(PersistenceAdapter adapter) {
 		for (int i = 0; i < LOOPS; i++) {
 			final int iteration = i;
-			StopWatch sw = new StopWatch("testCreation");
+			StopWatch sw = new StopWatch("testCreation" + adapter.getClass().getSimpleName());
 			sw.start("CreateAndUpdate");
 			tx.execute(t -> {
 				for (int itemId = 0; itemId < ITEM_COUNT; itemId++) {
@@ -134,7 +134,7 @@ public class TestPerformance {
 	public void createAllObjectsThenFindAndUpdateObjects(PersistenceAdapter adapter) {
 		for (int testRun = 0; testRun < LOOPS; testRun++) {
 			final int iteration = testRun;
-			StopWatch sw = new StopWatch("testInterleavedCreation");
+			StopWatch sw = new StopWatch("testInterleavedCreation" + adapter.getClass().getSimpleName());
 			sw.start("CreateThenUpdate");
 			tx.execute(t -> {
 				for (int itemId = 0; itemId < ITEM_COUNT; itemId++) {
@@ -159,7 +159,7 @@ public class TestPerformance {
 		for (int testRun = 0; testRun < LOOPS; testRun++) {
 			final int iteration = testRun;
 
-			StopWatch sw = new StopWatch("testFindByCriteriaForUpdate");
+			StopWatch sw = new StopWatch("testFindByCriteriaForUpdate" + adapter.getClass().getSimpleName());
 			sw.start("creation");
 			tx.execute(t -> {
 				for (int itemId = 0; itemId < ITEM_COUNT; itemId++) {

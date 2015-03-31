@@ -7,13 +7,12 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import io.phaas.viewmanager.configuration.TestConfiguration;
+import io.phaas.viewmanager.model.TestObject;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-
-import io.phaas.viewmanager.configuration.TestConfiguration;
-import io.phaas.viewmanager.model.TestObject;
 
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
@@ -23,7 +22,7 @@ import javax.persistence.PersistenceContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -246,7 +245,7 @@ public class ViewManagerTest {
 				return null;
 			});
 			fail("Expected concurrent modification exception");
-		} catch (ObjectOptimisticLockingFailureException e) {
+		} catch (OptimisticLockingFailureException e) {
 			// success
 		}
 	}
