@@ -16,6 +16,7 @@ import javax.persistence.FlushModeType;
 import javax.persistence.PersistenceContext;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
@@ -32,6 +33,7 @@ import org.springframework.util.StopWatch;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = { TestConfiguration.class })
+@Ignore
 public class TestPerformance {
 
 	private static final int UPDATE_COUNT = 10;

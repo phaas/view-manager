@@ -209,7 +209,7 @@ public class ViewManagerTest {
 		});
 	}
 
-	@Test
+	@Test(timeout = 500)
 	public void testConcurrentModification() {
 		tx.execute(t -> {
 			vm.persist(new TestEntity("ID1", new TestObject("GroupID", "RED", "Color")));

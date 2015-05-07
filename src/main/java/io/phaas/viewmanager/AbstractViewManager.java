@@ -29,28 +29,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public abstract class AbstractViewManager<E extends ViewEntity<?>, I, P extends PersistenceAdapter<E>> implements ViewManager<E, I> {
 
-	private final class ViewManagerTransactionSynchronization extends TransactionSynchronizationAdapter {
-		private ViewManagerSession<E> session;
-
-		public ViewManagerTransactionSynchronization(ViewManagerSession<E> session) {
-			this.session = session;
-		}
-
-		@Override
-		public void beforeCommit(boolean readOnly) {
-			session.commit();
-		}
-
-		@Override
-		public void afterCompletion(int status) {
-			threadSession.remove();
-		}
-	}
+	private static final String SESSION_KEY = io.phaas.viewmanager.ViewManagerSession.class.getCanonicalName();
 
 	// private final JdbcTemplate jdbc;
 	private final ObjectMapper objectMapper;
 
-	private final ThreadLocal<ViewManagerSession<E>> threadSession = new ThreadLocal<>();
 	private final P persistence;
 
 	public AbstractViewManager(ObjectMapper objectMapper, P persistence) {
@@ -166,13 +149,27 @@ public abstract class AbstractViewManager<E extends ViewEntity<?>, I, P extends 
 	}
 
 	private ViewManagerSession<E> getSession() {
-		ViewManagerSession<E> session = threadSession.get();
-		if (session == null) {
-			session = new ViewManagerSession<>(this);
-			threadSession.set(session);
-			TransactionSynchronizationManager.registerSynchronization(new ViewManagerTransactionSynchronization(session));
+		@SuppressWarnings("unchecked")
+		ViewManagerSession<E> session = (ViewManagerSession<E>) TransactionSynchronizationManager.getResource(SESSION_KEY);
+		if (session != null) {
+			return session;
 		}
-		return session;
+
+		final ViewManagerSession<E> newSession = new ViewManagerSession<>(this);
+		TransactionSynchronizationManager.bindResource(SESSION_KEY, newSession);
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+			@Override
+			public void beforeCommit(boolean readOnly) {
+				newSession.commit();
+			}
+
+			@Override
+			public void afterCompletion(int status) {
+				TransactionSynchronizationManager.unbindResource(SESSION_KEY);
+
+			}
+		});
+		return newSession;
 	}
 
 	protected void insert(E object) {
